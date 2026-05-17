@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPSO Practice App</title>
+<style>
+  :root {
+    --blue: #1a3a6b;
+    --blue-light: #eef2f9;
+    --blue-mid: #3a6bc4;
+    --green: #1a6b3a;
+    --green-light: #eef9f2;
+    --red: #6b1a1a;
+    --red-light: #f9eeee;
+    --amber: #7a5500;
+    --amber-light: #fff8e6;
+    --gray: #f5f5f5;
+    --border: #dde3ef;
+    --text: #1a1a2e;
+    --muted: #666;
+    --white: #ffffff;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(26,58,107,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f3fa; color: var(--text); min-height: 100vh; }
+
+  /* ── HOME ── */
+  #home { max-width: 760px; margin: 0 auto; padding: 2rem 1rem; }
+  .app-header { text-align: center; margin-bottom: 2rem; }
+  .app-logo { display: inline-flex; align-items: center; gap: 10px; background: var(--blue); color: #fff; padding: 10px 22px; border-radius: 50px; margin-bottom: 1rem; font-size: 15px; font-weight: 600; }
+  .app-logo svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .app-title { font-size: 28px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+  .app-sub { font-size: 15px; color: var(--muted); }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem; }
+  .stat-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1rem; text-align: center; }
+  .stat-num { font-size: 26px; font-weight: 700; color: var(--blue); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .papers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .paper-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; cursor: pointer; transition: all 0.18s; box-shadow: var(--shadow); }
+  .paper-card:hover { border-color: var(--blue-mid); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,58,107,0.13); }
+  .paper-card.done { border-left: 4px solid var(--green); }
+  .paper-card.done .paper-badge { background: var(--green-light); color: var(--green); }
+  .paper-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .paper-num { font-size: 18px; font-weight: 700; color: var(--blue); }
+  .paper-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--blue-light); color: var(--blue); }
+  .paper-info { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+  .paper-topics { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+  .topic-tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; }
+  .tag-bio { background: #e8f5e9; color: #2e7d32; }
+  .tag-chem { background: #e3f2fd; color: #1565c0; }
+  .tag-phys { background: #fff8e1; color: #e65100; }
+  .paper-score { font-size: 12px; font-weight: 600; color: var(--green); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--blue-mid); }
+  .btn-outline { background: transparent; color: var(--blue); border: 1.5px solid var(--blue); }
+  .btn-outline:hover { background: var(--blue-light); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { opacity: 0.9; }
+  .btn-red { background: #c0392b; color: #fff; }
+  .btn-red:hover { opacity: 0.9; }
+
+  /* ── EXAM ── */
+  #exam { display: none; min-height: 100vh; background: #f0f3fa; }
+  .exam-topbar { background: var(--blue); color: #fff; padding: 0 1.5rem; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .exam-title-bar { font-size: 15px; font-weight: 600; }
+  .timer-box { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 30px; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .timer-box.urgent { background: rgba(220,53,69,0.85); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+  .exam-progress { background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 30px; font-size: 13px; }
+  .exam-body { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem 6rem; }
+  .section-header { background: var(--blue); color: #fff; padding: 10px 18px; border-radius: var(--radius); margin: 1.5rem 0 1rem; font-size: 14px; font-weight: 600; }
+  .section-instruction { background: var(--blue-light); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--blue); margin-bottom: 1.2rem; line-height: 1.6; }
+  .question-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .question-card.answered { border-left: 4px solid var(--blue-mid); }
+  .q-stem { font-size: 15px; font-weight: 500; margin-bottom: 14px; line-height: 1.6; }
+  .q-num { color: var(--blue); font-weight: 700; margin-right: 6px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option-label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 8px; border: 1.5px solid var(--border); cursor: pointer; font-size: 14px; line-height: 1.5; transition: all 0.15s; }
+  .option-label:hover { background: var(--blue-light); border-color: var(--blue-mid); }
+  .option-label input { display: none; }
+  .opt-letter { min-width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--muted); transition: all 0.15s; }
+  input[type=radio]:checked + .option-label,
+  .option-label.selected { background: var(--blue-light); border-color: var(--blue-mid); }
+  input[type=radio]:checked + .option-label .opt-letter,
+  .option-label.selected .opt-letter { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .stmt-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .stmt-row { display: flex; align-items: flex-start; gap: 10px; background: var(--gray); padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+  .stmt-num { font-weight: 700; color: var(--blue); min-width: 20px; }
+
+  /* Section B response table */
+  .resp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+  .resp-table th { background: var(--blue); color: #fff; padding: 7px 10px; text-align: center; }
+  .resp-table td { border: 1px solid var(--border); padding: 7px 10px; text-align: center; }
+  .resp-table tr:nth-child(even) td { background: var(--blue-light); }
+
+  /* Bottom nav */
+  .exam-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 1.5rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+  .answered-count { font-size: 13px; color: var(--muted); }
+  .answered-count span { font-weight: 700; color: var(--blue); }
+
+  /* ── RESULTS ── */
+  #results { display: none; max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+  .results-header { text-align: center; margin-bottom: 2rem; }
+  .score-circle { width: 130px; height: 130px; border-radius: 50%; border: 6px solid var(--blue); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+  .score-big { font-size: 34px; font-weight: 800; color: var(--blue); }
+  .score-total { font-size: 14px; color: var(--muted); }
+  .results-grade { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .results-msg { font-size: 15px; color: var(--muted); }
+  .breakdown-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 1.5rem 0; }
+  .bk-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1rem; text-align: center; }
+  .bk-num { font-size: 22px; font-weight: 700; }
+  .bk-label { font-size: 12px; color: var(--muted); }
+  .review-list { display: flex; flex-direction: column; gap: 10px; margin-top: 1.5rem; }
+  .review-item { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1rem 1.25rem; }
+  .review-item.correct { border-left: 4px solid var(--green); }
+  .review-item.wrong { border-left: 4px solid #c0392b; }
+  .review-item.skipped { border-left: 4px solid #aaa; }
+  .review-q { font-size: 14px; font-weight: 500; margin-bottom: 6px; line-height: 1.5; }
+  .review-ans { font-size: 13px; margin-top: 4px; }
+  .correct-text { color: var(--green); font-weight: 600; }
+  .wrong-text { color: #c0392b; font-weight: 600; }
+  .skip-text { color: #888; }
+  .results-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+  .section-toggle { cursor: pointer; font-size: 15px; font-weight: 600; color: var(--blue); margin: 1rem 0 0.5rem; display: flex; align-items: center; gap: 6px; }
+
+  /* Progress dots */
+  .progress-dots { display: flex; flex-wrap: wrap; gap: 5px; margin: 1rem 0; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; background: var(--border); font-size: 9px; display: flex; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; }
+  .dot.done { background: var(--blue-mid); color: #fff; }
+
+  @media (max-width: 540px) {
+    .papers-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .breakdown-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div id="home">
+  <div class="app-header">
+    <div class="app-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      SPSO Practice
+    </div>
+    <h1 class="app-title">Singapore Primary Science Olympiad</h1>
+    <p class="app-sub">4 full practice papers · 40 questions each · 75 minutes timer</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-papers">4</div>
+      <div class="stat-label">Papers Available</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-best">—</div>
+      <div class="stat-label">Best Score</div>
+    </div>
+  </div>
+
+  <div class="papers-grid" id="papers-grid"></div>
+</div>
+
+<!-- ══════════════ EXAM ══════════════ -->
+<div id="exam">
+  <div class="exam-topbar">
+    <div class="exam-title-bar" id="exam-title-bar">Paper 1</div>
+    <div class="timer-box" id="timer-display">1:15:00</div>
+    <div class="exam-progress" id="exam-progress-bar">Q 1 / 40</div>
+  </div>
+  <div class="exam-body" id="exam-body"></div>
+  <div class="exam-nav">
+    <div class="answered-count">Answered: <span id="answered-count">0</span> / 40</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline btn-sm" onclick="confirmQuit()">Quit</button>
+      <button class="btn btn-primary btn-sm" onclick="submitPaper()">Submit Paper</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RESULTS ══════════════ -->
+<div id="results">
+  <div class="results-header">
+    <div class="score-circle" id="score-circle">
+      <div class="score-big" id="score-big">0</div>
+      <div class="score-total">/ 50</div>
+    </div>
+    <div class="results-grade" id="results-grade"></div>
+    <div class="results-msg" id="results-msg"></div>
+  </div>
+  <div class="breakdown-grid">
+    <div class="bk-card">
+      <div class="bk-num" id="bk-correct" style="color:var(--green)">0</div>
+      <div class="bk-label">Correct</div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-num" id="bk-wrong" style="color:#c0392b">0</div>
+      <div class="bk-label">Wrong</div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-num" id="bk-skip" style="color:#aaa">0</div>
+      <div class="bk-label">Skipped</div>
+    </div>
+  </div>
+  <div id="review-sections"></div>
+  <div class="results-actions">
+    <button class="btn btn-outline" onclick="goHome()">← Back to Papers</button>
+    <button class="btn btn-primary" id="next-paper-btn" onclick="nextPaper()">Next Paper →</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   QUESTION BANK — 4 Papers × 40 Questions
+   Section A: Q1-30 (1 mark each)
+   Section B: Q31-40 (2 marks each, A/B/C/D response)
+═══════════════════════════════════════════ */
+
+const PAPERS = [
+
+/* ══════════ PAPER 1 ══════════ */
+{
+  title: "Paper 1",
+  topics: ["Plants & Animals","States of Matter","Forces & Energy"],
+  sectionA: [
+    // Biology Q1-10
+    { q:"Which part of a plant carries water and minerals from the roots to the leaves?", opts:["A. Phloem","B. Xylem","C. Epidermis","D. Stomata"], ans:"B" },
+    { q:"Which of the following animals undergoes complete metamorphosis?", opts:["A. Grasshopper","B. Cockroach","C. Butterfly","D. Dragonfly nymph"], ans:"C" },
+    { q:"A plant is kept in a sealed transparent box in sunlight. After several hours, water droplets appear on the inside of the box. This water came from:", opts:["A. Photosynthesis","B. Transpiration through stomata","C. Condensation of outside air","D. Root absorption only"], ans:"B" },
+    { q:"Which of the following is NOT a characteristic of living things?", opts:["A. Respond to stimuli","B. Reproduce","C. Made of metal","D. Require energy"], ans:"C" },
+    { q:"In which organ does digestion of starch begin?", opts:["A. Stomach","B. Small intestine","C. Mouth","D. Large intestine"], ans:"C" },
+    { q:"A food chain is: Algae → Water flea → Small fish → Large fish. If all small fish were removed, what would most likely happen to the water flea population?", opts:["A. Decrease because large fish eat them","B. Increase because their predator is removed","C. Stay the same","D. Disappear immediately"], ans:"B" },
+    { q:"Which of the following is a seed dispersal method that uses wind?", opts:["A. A coconut floating in water","B. A burr hooking onto animal fur","C. A dandelion seed with a feathery parachute","D. A fruit being eaten and its seed excreted"], ans:"C" },
+    { q:"Which gas do plants take in during photosynthesis?", opts:["A. Oxygen","B. Nitrogen","C. Carbon dioxide","D. Hydrogen"], ans:"C" },
+    { q:"Which of the following best describes a cold-blooded animal?", opts:["A. An animal whose body temperature changes with the environment","B. An animal that lives in cold regions","C. An animal whose body temperature stays constant","D. An animal that eats cold food"], ans:"A" },
+    { q:"Which structure in a cell controls what enters and leaves it?", opts:["A. Cell wall","B. Nucleus","C. Cell membrane","D. Cytoplasm"], ans:"C" },
+    // Chemistry Q11-20
+    { q:"What happens to water molecules when water is heated from 20°C to 80°C?", opts:["A. They move slower and come closer together","B. They gain energy and move faster","C. They break apart into hydrogen and oxygen","D. They change colour"], ans:"B" },
+    { q:"Which of the following is NOT a property of metals?", opts:["A. Good conductor of heat","B. Malleable","C. Transparent","D. Shiny when polished"], ans:"C" },
+    { q:"Salt water is a mixture. Which method would best obtain pure salt from salt water?", opts:["A. Filtration","B. Using a magnet","C. Evaporation then collection of crystals","D. Distillation and discarding the water"], ans:"C" },
+    { q:"A student mixes vinegar and bicarbonate of soda. Bubbles of gas are produced. This is:", opts:["A. Physical change — a new mixture","B. Chemical change — a new substance is formed","C. Physical change — the gas was already in the vinegar","D. Not a change at all"], ans:"B" },
+    { q:"Which state of matter has a definite shape and volume?", opts:["A. Gas","B. Liquid","C. Solid","D. Plasma"], ans:"C" },
+    { q:"Iron has a melting point of 1538°C and a boiling point of 2861°C. What is its state at 2000°C?", opts:["A. Solid","B. Liquid","C. Gas","D. It cannot exist"], ans:"B" },
+    { q:"Which of the following pairs are both mixtures?", opts:["A. Air and salt water","B. Pure gold and pure water","C. Oxygen and iron","D. Water and ice"], ans:"A" },
+    { q:"Why does a wet cloth feel cool when placed on your forehead?", opts:["A. Water absorbs heat from the skin as it evaporates","B. Cloth is a good conductor of cold","C. Water has a low temperature","D. Evaporation releases heat"], ans:"A" },
+    { q:"Which of the following substances can be separated by chromatography?", opts:["A. Sand and gravel","B. Salt and water","C. Different coloured inks mixed together","D. Iron and copper filings"], ans:"C" },
+    { q:"Steel wool left in a damp place turns orange-brown. This is because:", opts:["A. Steel absorbs water and changes colour","B. Iron reacts with oxygen and water to form rust","C. Steel reflects orange light","D. Humidity stains the steel"], ans:"B" },
+    // Physics Q21-30
+    { q:"A student pushes two boxes — one heavy and one light — with the same force. Which box accelerates more?", opts:["A. The heavy box","B. The light box","C. Both accelerate equally","D. Neither moves"], ans:"B" },
+    { q:"Which of the following is NOT a form of energy?", opts:["A. Light","B. Sound","C. Mass","D. Heat"], ans:"C" },
+    { q:"A shadow is formed because:", opts:["A. Light is absorbed by all objects","B. Light travels in straight lines and cannot pass through opaque objects","C. The object reflects all light","D. Light slows down near objects"], ans:"B" },
+    { q:"Which of the following correctly describes how a mirror forms an image?", opts:["A. It refracts light","B. It absorbs light and re-emits it","C. It reflects light at the same angle it hits the surface","D. It bends light towards the normal"], ans:"C" },
+    { q:"A ball rolls along a smooth surface. What will eventually cause it to stop?", opts:["A. Gravity pulling it down","B. Air resistance and friction","C. The ball running out of energy internally","D. The ball converting all energy to light"], ans:"B" },
+    { q:"Which of the following is an example of potential energy converting to kinetic energy?", opts:["A. A battery charging a phone","B. A boulder rolling down a hill","C. A plant converting sunlight to glucose","D. An ice cube melting"], ans:"B" },
+    { q:"In a simple series circuit with two identical bulbs and one battery, what happens when one bulb is unscrewed?", opts:["A. The other bulb glows twice as bright","B. The other bulb stays the same brightness","C. The other bulb goes out too","D. The battery dies immediately"], ans:"C" },
+    { q:"A student stands 4 m from a wall and claps. She hears the echo 0.024 seconds later. What is the approximate speed of sound?", opts:["A. 167 m/s","B. 333 m/s","C. 400 m/s","D. 96 m/s"], ans:"B" },
+    { q:"What type of lever is a pair of scissors?", opts:["A. First-class lever — fulcrum between effort and load","B. Second-class lever — load between fulcrum and effort","C. Third-class lever — effort between fulcrum and load","D. Not a lever"], ans:"A" },
+    { q:"Which of the following describes the energy transformation in a solar panel?", opts:["A. Chemical → Electrical","B. Light → Electrical","C. Heat → Light","D. Electrical → Light"], ans:"B" },
+  ],
+  sectionB: [
+    { stem:"Which of the following statements about photosynthesis are correct?",
+      stmts:["Photosynthesis requires sunlight, carbon dioxide, and water.","Photosynthesis releases carbon dioxide as a by-product.","Glucose produced in photosynthesis can be converted to starch for storage."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"C" },
+    { stem:"A student investigates how light affects the rate of oxygen production in a water plant. Which statements correctly describe how to make this a fair test?",
+      stmts:["Keep the temperature of the water the same throughout.","Use the same type and amount of water plant in each trial.","Change the type of plant used at each light intensity."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1 only"]], ans:"B" },
+    { stem:"Which statements about the particle model of matter are correct?",
+      stmts:["All matter is made of tiny particles that are in constant motion.","In a solid, particles are arranged in a regular pattern and vibrate in fixed positions.","When a gas is compressed, the particles themselves get smaller."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"B" },
+    { stem:"Which of the following are examples of a chemical change?",
+      stmts:["Burning a candle","Dissolving sugar in tea","Baking bread in an oven"],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1 only"]], ans:"B" },
+    { stem:"A student compares the brightness of a bulb in a series circuit vs a parallel circuit, using the same battery and identical bulbs. Which statements are correct?",
+      stmts:["The bulb in the parallel circuit glows brighter because it receives the full battery voltage.","The bulb in the series circuit glows brighter because current builds up.","Adding more bulbs in parallel does not dim the original bulbs."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"C" },
+    { stem:"Which statements correctly describe properties of sound?",
+      stmts:["Sound requires a medium (solid, liquid, or gas) to travel through.","Sound travels faster in air than in water.","A higher frequency sound produces a higher pitch."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1, 2 only"]], ans:"B" },
+    { stem:"Which of the following statements about food chains and food webs are correct?",
+      stmts:["Energy flows from producers to consumers.","A food web is more stable than a food chain because there are alternative food sources.","Producers are always animals that eat plants."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about forces are correct?",
+      stmts:["A force is needed to keep a moving object moving at constant speed on a frictionless surface.","Forces can change the shape, speed, or direction of an object.","When two equal and opposite forces act on an object, the object remains stationary or moves at constant speed."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"C" },
+    { stem:"Which statements about adaptation are correct?",
+      stmts:["A polar bear's thick white fur helps it stay warm and provides camouflage.","A fish's streamlined body reduces water resistance.","A cactus stores water in its roots because it has no stem."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"A student claims: 'If the height of a pendulum's swing is increased, its period (time for one complete swing) will increase.' Which statements correctly assess this claim?",
+      stmts:["This is a valid scientific hypothesis because it makes a testable prediction.","The period of a pendulum depends on its length, not its swing height — the claim is incorrect.","To test the claim fairly, only the swing height should be changed while keeping the pendulum length constant."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1, 2 only"]], ans:"A" },
+  ]
+},
+
+/* ══════════ PAPER 2 ══════════ */
+{
+  title: "Paper 2",
+  topics: ["Human Body","Materials","Light & Heat"],
+  sectionA: [
+    { q:"Which organ in the human body filters blood and produces urine?", opts:["A. Liver","B. Heart","C. Kidney","D. Lung"], ans:"C" },
+    { q:"What is the function of red blood cells?", opts:["A. Fight infection","B. Help blood clot","C. Carry oxygen around the body","D. Digest food"], ans:"C" },
+    { q:"Which of the following is NOT a function of the skin?", opts:["A. Regulate body temperature","B. Sense pain and touch","C. Produce insulin","D. Act as a barrier against germs"], ans:"C" },
+    { q:"Which part of the human eye controls the amount of light entering?", opts:["A. Retina","B. Cornea","C. Iris","D. Optic nerve"], ans:"C" },
+    { q:"The human heart has how many chambers?", opts:["A. 2","B. 3","C. 4","D. 6"], ans:"C" },
+    { q:"Which nutrient provides the most energy per gram?", opts:["A. Carbohydrates","B. Proteins","C. Fat","D. Vitamins"], ans:"C" },
+    { q:"What is the correct path of air in the human respiratory system?", opts:["A. Nose → trachea → bronchi → alveoli","B. Nose → alveoli → bronchi → trachea","C. Mouth → alveoli → trachea → bronchi","D. Trachea → nose → bronchi → alveoli"], ans:"A" },
+    { q:"A student burns 1 g of food under a beaker of water. The water temperature rises by 4°C. What does this experiment measure?", opts:["A. The mass of the food","B. The energy content of the food","C. The boiling point of the food","D. The density of the food"], ans:"B" },
+    { q:"Which of the following shows a correct food pyramid (base = most needed)?", opts:["A. Fats → Grains → Vegetables → Proteins","B. Grains → Vegetables/Fruits → Proteins → Fats","C. Proteins → Fats → Grains → Vegetables","D. Vegetables → Grains → Fats → Proteins"], ans:"B" },
+    { q:"Which of the following is an invertebrate?", opts:["A. Shark","B. Earthworm","C. Frog","D. Pigeon"], ans:"B" },
+    { q:"A material that allows heat to pass through slowly is called:", opts:["A. A conductor","B. An insulator","C. A reflector","D. A radiator"], ans:"B" },
+    { q:"Which of the following metals has the highest electrical conductivity?", opts:["A. Iron","B. Aluminium","C. Silver","D. Steel"], ans:"C" },
+    { q:"What property of glass makes it useful for windows?", opts:["A. It is opaque","B. It is transparent","C. It is magnetic","D. It is flexible"], ans:"B" },
+    { q:"A student tests four materials to see which is the best thermal insulator. Which setup is correct?", opts:["A. Use different amounts of each material","B. Use different container sizes","C. Keep the starting temperature the same and measure temperature drop after equal time","D. Heat each material until it melts"], ans:"C" },
+    { q:"Which of the following is a thermosetting polymer?", opts:["A. Polythene (plastic bag)","B. Nylon","C. Epoxy resin (glue)","D. Rubber band"], ans:"C" },
+    { q:"Why is aluminium used to make aircraft bodies rather than iron?", opts:["A. Aluminium is stronger than iron","B. Aluminium is cheaper","C. Aluminium is much lighter than iron for similar strength","D. Aluminium conducts electricity better"], ans:"C" },
+    { q:"Concrete is strong under compression but weak under tension. Steel is added to make reinforced concrete. This works because:", opts:["A. Steel increases the colour of concrete","B. Steel is strong under tension, complementing concrete's strength","C. Steel absorbs moisture","D. Steel makes concrete lighter"], ans:"B" },
+    { q:"Which of the following is biodegradable?", opts:["A. Plastic bag","B. Glass bottle","C. Banana peel","D. Aluminium can"], ans:"C" },
+    { q:"A student tests whether a liquid is acidic, neutral, or alkaline using litmus paper. Blue litmus turns red. The liquid is:", opts:["A. Alkaline","B. Neutral","C. Acidic","D. Cannot be determined"], ans:"C" },
+    { q:"Which of the following correctly ranks electrical conductivity from best to worst?", opts:["A. Rubber > Copper > Wood","B. Copper > Aluminium > Rubber","C. Wood > Copper > Rubber","D. Rubber > Aluminium > Copper"], ans:"B" },
+    { q:"Light from a torch in a dark room travels until:", opts:["A. It runs out of energy after 1 km","B. It is absorbed, reflected or transmitted by an object","C. It slows down to zero in air","D. It turns into heat after 5 seconds"], ans:"B" },
+    { q:"When white light passes through a prism, it splits into a spectrum. This is because:", opts:["A. White light is made up of all colours which refract at different angles","B. The prism absorbs some colours and reflects others","C. White light reacts chemically with the glass","D. Different colours travel at the same speed in glass"], ans:"A" },
+    { q:"The temperature of an object is a measure of:", opts:["A. The total amount of heat energy it contains","B. How quickly it conducts heat","C. The average kinetic energy of its particles","D. How much light it emits"], ans:"C" },
+    { q:"A student places a metal rod in boiling water at one end. The other end becomes hot. This is due to:", opts:["A. Convection","B. Radiation","C. Conduction","D. Evaporation"], ans:"C" },
+    { q:"Which of the following is an example of heat transfer by radiation?", opts:["A. Water heating in a pot on a stove","B. Heat felt from a bonfire from several metres away","C. A hot spoon in a bowl of soup warming the soup","D. Wind carrying warm air from the tropics"], ans:"B" },
+    { q:"Which colour surface absorbs the most heat from sunlight?", opts:["A. White","B. Silver","C. Yellow","D. Black"], ans:"D" },
+    { q:"An image formed in a flat mirror is:", opts:["A. Real and inverted","B. Virtual and upright","C. Real and upright","D. Virtual and inverted"], ans:"B" },
+    { q:"A student observes that the angle of incidence of a light ray on a mirror is 35°. What is the angle of reflection?", opts:["A. 55°","B. 70°","C. 35°","D. 145°"], ans:"C" },
+    { q:"Which of the following does NOT affect the pitch of a vibrating guitar string?", opts:["A. Length of the string","B. Tension in the string","C. Colour of the string","D. Thickness of the string"], ans:"C" },
+    { q:"Solar water heaters use black-painted pipes. This is because black surfaces:", opts:["A. Reflect more radiation","B. Emit less radiation","C. Absorb radiation more efficiently","D. Conduct water better"], ans:"C" },
+  ],
+  sectionB: [
+    { stem:"Which of the following statements about the human circulatory system are correct?",
+      stmts:["The heart pumps oxygenated blood to the body through arteries.","Veins carry blood back to the heart.","Capillaries are the largest blood vessels in the body."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1 only"]], ans:"B" },
+    { stem:"Which statements about materials and their properties are correct?",
+      stmts:["Ceramics are generally brittle and can withstand high temperatures.","Polymers are always flexible and cannot be rigid.","Composites combine two or more materials to achieve better properties than either material alone."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"C" },
+    { stem:"Which statements about light are correct?",
+      stmts:["Light travels faster in a vacuum than in any other medium.","When light travels from water to air, it bends away from the normal.","An opaque object does not allow any light to pass through."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"A" },
+    { stem:"A student investigates thermal conductivity by touching a metal spoon and a wooden spoon left in the same room. Which statements are correct?",
+      stmts:["The metal spoon feels colder because it conducts heat away from the hand faster.","The wooden spoon is at a lower temperature than the metal spoon.","Both spoons are at the same room temperature."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1, 2 only"]], ans:"B" },
+    { stem:"Which statements about convection are correct?",
+      stmts:["Convection can only occur in fluids (liquids and gases).","When a fluid is heated, it becomes less dense and rises.","Convection currents in the atmosphere cause wind."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"A" },
+    { stem:"Which statements about the human digestive system are correct?",
+      stmts:["Enzymes in the mouth begin breaking down starch into simpler sugars.","The stomach uses acid and enzymes to break down proteins.","Most absorption of nutrients occurs in the large intestine."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about acids and bases are correct?",
+      stmts:["Acids turn blue litmus red.","Neutralisation occurs when an acid and a base react to form salt and water.","All alkaline solutions have a pH of exactly 14."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"A student claims that black-painted cans cool down faster than white-painted cans. Which statements correctly assess this?",
+      stmts:["Black surfaces are better emitters of radiation, so the claim is likely correct.","To test fairly, both cans should be filled with the same amount of hot water at the same temperature.","White cans lose heat only through conduction, not radiation."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about the immune system are correct?",
+      stmts:["White blood cells produce antibodies to fight pathogens.","Vaccines introduce a weakened form of a pathogen to stimulate immunity.","Once you have had a disease, your body always forgets how to fight it."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"B" },
+    { stem:"Which statements about reflection and refraction are correct?",
+      stmts:["The angle of incidence equals the angle of reflection for a flat mirror.","Refraction occurs because light changes speed when it moves between different media.","A convex lens causes light rays to diverge (spread out)."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+  ]
+},
+
+/* ══════════ PAPER 3 ══════════ */
+{
+  title: "Paper 3",
+  topics: ["Ecosystems","Chemical Reactions","Electricity & Magnetism"],
+  sectionA: [
+    { q:"Which of the following describes a habitat?", opts:["A. The food eaten by an organism","B. The natural environment where an organism lives","C. The population of one species","D. The relationship between two organisms"], ans:"B" },
+    { q:"Which process returns carbon dioxide to the atmosphere?", opts:["A. Photosynthesis","B. Transpiration","C. Respiration","D. Germination"], ans:"C" },
+    { q:"A population of rabbits increases rapidly. Which of the following would MOST likely cause the rabbit population to decrease next?", opts:["A. More grass grows","B. Predator (fox) population increases","C. Temperature rises","D. Rainfall increases"], ans:"B" },
+    { q:"What is a niche in ecology?", opts:["A. A physical hole in which an animal lives","B. The role and position of an organism within its ecosystem","C. A type of food web","D. A rare species"], ans:"B" },
+    { q:"Which of the following is a decomposer?", opts:["A. Eagle","B. Earthworm","C. Grass","D. Rabbit"], ans:"B" },
+    { q:"Nitrogen is returned to the soil by:", opts:["A. Plants absorbing it through leaves","B. Nitrogen-fixing bacteria in the soil","C. Rainwater dissolving it","D. Animals breathing it out"], ans:"B" },
+    { q:"A lichen is an example of a mutualistic relationship between:", opts:["A. A plant and an insect","B. A fungus and an alga","C. A predator and prey","D. A parasite and a host"], ans:"B" },
+    { q:"Which of the following best describes the difference between a habitat and an ecosystem?", opts:["A. A habitat includes all the organisms AND their physical environment; an ecosystem is just where organisms live","B. An ecosystem includes all organisms and their interactions with the physical environment; a habitat is where a specific organism lives","C. There is no difference","D. A habitat is larger than an ecosystem"], ans:"B" },
+    { q:"Overuse of pesticides can harm an ecosystem because:", opts:["A. Pesticides make soil nutrients stronger","B. Pesticides can kill beneficial insects and disrupt food chains","C. Pesticides increase rainfall","D. Pesticides remove carbon dioxide from air"], ans:"B" },
+    { q:"In the water cycle, which process converts liquid water into water vapour?", opts:["A. Condensation","B. Precipitation","C. Evaporation","D. Runoff"], ans:"C" },
+    { q:"Which of the following observations is evidence of a chemical reaction?", opts:["A. Ice melting in a glass","B. Salt dissolving in water","C. A gas being produced when vinegar is added to baking soda","D. Sugar stirred into tea"], ans:"C" },
+    { q:"When hydrogen burns in oxygen, the product is:", opts:["A. Carbon dioxide","B. Steam (water vapour)","C. Nitrogen gas","D. Hydrogen peroxide"], ans:"B" },
+    { q:"Which of the following correctly describes conservation of mass?", opts:["A. Mass always increases during a chemical reaction","B. Mass always decreases during a chemical reaction","C. The total mass of reactants equals the total mass of products","D. Mass is not important in chemical reactions"], ans:"C" },
+    { q:"A student adds zinc to copper sulphate solution. The solution turns colourless and an orange-red solid appears. This shows:", opts:["A. A physical change","B. Zinc is less reactive than copper","C. A displacement reaction where zinc replaces copper","D. Copper sulphate evaporated"], ans:"C" },
+    { q:"Calcium carbonate (chalk) reacts with hydrochloric acid. Which gas is produced?", opts:["A. Oxygen","B. Hydrogen","C. Carbon dioxide","D. Nitrogen"], ans:"C" },
+    { q:"Why does bread rise in an oven?", opts:["A. Heat causes water to expand the bread","B. Yeast produces carbon dioxide gas during fermentation, creating bubbles in the dough","C. Flour melts and expands","D. Baking powder absorbs air from the oven"], ans:"B" },
+    { q:"A student burns magnesium ribbon in air. The product (magnesium oxide) is:", opts:["A. Heavier than the original magnesium because it gained oxygen","B. Lighter than the original magnesium","C. The same mass because no change occurred","D. Heavier because fire adds mass"], ans:"A" },
+    { q:"Which of the following is NOT a sign of a chemical change?", opts:["A. Colour change","B. Gas produced","C. Change of shape","D. Heat or light emitted"], ans:"C" },
+    { q:"An acid reacts with a metal to produce:", opts:["A. Salt + water","B. Salt + hydrogen gas","C. Salt + carbon dioxide","D. Water + oxygen"], ans:"B" },
+    { q:"The word equation for photosynthesis is:", opts:["A. Glucose + Oxygen → Carbon dioxide + Water + Energy","B. Carbon dioxide + Water → Glucose + Oxygen (using light energy)","C. Carbon dioxide + Glucose → Water + Oxygen","D. Oxygen + Water → Glucose + Carbon dioxide"], ans:"B" },
+    { q:"What is the unit of electric current?", opts:["A. Volt (V)","B. Ohm (Ω)","C. Ampere (A)","D. Watt (W)"], ans:"C" },
+    { q:"Which of the following materials is magnetic?", opts:["A. Aluminium","B. Copper","C. Plastic","D. Iron"], ans:"D" },
+    { q:"A student builds a circuit with a battery, switch, and two bulbs in parallel. When one bulb is removed, what happens to the other bulb?", opts:["A. It goes out","B. It glows brighter","C. It glows dimmer","D. It stays the same brightness"], ans:"D" },
+    { q:"How can you increase the strength of an electromagnet?", opts:["A. Use a longer wire","B. Increase the number of coils or increase the current","C. Use a smaller battery","D. Remove the iron core"], ans:"B" },
+    { q:"A student measures the voltage across a bulb as 3 V and the current through it as 0.5 A. What is the resistance of the bulb?", opts:["A. 1.5 Ω","B. 3.5 Ω","C. 6 Ω","D. 0.17 Ω"], ans:"C" },
+    { q:"Which of the following is NOT a use of electromagnets?", opts:["A. Electric bells","B. Scrap metal cranes","C. Permanent fridge magnets","D. MRI scanners"], ans:"C" },
+    { q:"Why does a compass needle point north?", opts:["A. The compass needle is attracted to the North Star","B. The Earth acts as a giant magnet with a magnetic south pole near the geographic north","C. Wind always blows the needle north","D. Gravity pulls the needle north"], ans:"B" },
+    { q:"Which type of circuit is used in household electrical wiring?", opts:["A. Series circuit","B. Parallel circuit","C. Open circuit","D. Short circuit"], ans:"B" },
+    { q:"A student connects a circuit with a 6 V battery and a 2 Ω resistor. What current flows?", opts:["A. 12 A","B. 4 A","C. 3 A","D. 0.33 A"], ans:"C" },
+    { q:"Which of the following correctly describes static electricity?", opts:["A. The flow of electrons through a conductor","B. The build-up of electric charge on the surface of an object","C. The resistance of a material to current","D. The voltage of a battery"], ans:"B" },
+  ],
+  sectionB: [
+    { stem:"Which statements about ecosystems are correct?",
+      stmts:["Removing a species from an ecosystem can affect all other species in the food web.","Producers always receive energy from consumers.","Abiotic factors include temperature, water availability, and light intensity."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1, 2 only"]], ans:"B" },
+    { stem:"Which statements about the nitrogen cycle are correct?",
+      stmts:["Decomposers break down dead organisms, releasing nitrogen compounds into the soil.","Plants absorb nitrogen directly from the air through their leaves.","Nitrogen-fixing bacteria convert nitrogen gas into compounds that plants can absorb."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"C" },
+    { stem:"Which statements about chemical reactions are correct?",
+      stmts:["In every chemical reaction, new atoms are created.","The total mass of reactants equals the total mass of products (conservation of mass).","A catalyst speeds up a chemical reaction without being permanently changed."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"C" },
+    { stem:"A student builds a series circuit with a 9 V battery and three identical 3 Ω resistors. Which statements are correct?",
+      stmts:["The total resistance in the circuit is 9 Ω.","The current in the circuit is 1 A.","The voltage is shared equally across the three resistors, so each has 3 V across it."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"A" },
+    { stem:"Which statements about magnets and magnetism are correct?",
+      stmts:["Like poles repel and unlike poles attract.","Magnetic field lines travel from the south pole to the north pole outside a magnet.","Steel makes a better permanent magnet than iron because it is harder to demagnetise."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","1, 2 only"],["D","2, 3 only"]], ans:"B" },
+    { stem:"Which statements about the reactivity series are correct?",
+      stmts:["A more reactive metal displaces a less reactive metal from a solution of its salt.","Gold reacts vigorously with dilute acids.","Potassium is more reactive than copper."],
+      opts:[["A","1, 2, 3"],["B","1, 3 only"],["C","2, 3 only"],["D","1, 2 only"]], ans:"B" },
+    { stem:"Which statements about food chains and energy are correct?",
+      stmts:["Energy is lost at each trophic level mainly as heat.","The producer in a food chain always contains the most energy.","Decomposers are not part of food webs."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"A student investigates whether sugar concentration affects the rate of fermentation in yeast. Which statements describe good experimental design?",
+      stmts:["Keep the temperature constant in all test tubes.","Use the same amount of yeast in all test tubes.","Change the type of yeast in each test tube to see which works best."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about biodiversity are correct?",
+      stmts:["Higher biodiversity generally makes an ecosystem more resilient to change.","Deforestation reduces biodiversity by destroying habitats.","Introducing non-native species always increases biodiversity."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about parallel circuits are correct?",
+      stmts:["In a parallel circuit, the voltage across each branch is the same.","Adding more branches in parallel decreases the total resistance.","In a parallel circuit, if one branch is broken, current stops flowing in all branches."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+  ]
+},
+
+/* ══════════ PAPER 4 ══════════ */
+{
+  title: "Paper 4",
+  topics: ["Scientific Method","Matter & Reactions","Motion & Waves"],
+  sectionA: [
+    { q:"Which of the following is a correct scientific hypothesis?", opts:["A. Plants are beautiful.","B. If plants receive more light, then they will grow taller.","C. I think science is interesting.","D. Photosynthesis is important."], ans:"B" },
+    { q:"In a scientific experiment, the variable that is deliberately changed is called:", opts:["A. The control variable","B. The dependent variable","C. The independent variable","D. The constant"], ans:"C" },
+    { q:"A student conducts an experiment three times and gets results of 4.1, 4.2, and 4.3. What should she record as her result?", opts:["A. 4.1 (first result is most accurate)","B. 4.3 (highest result)","C. 4.2 (average / mean)","D. 4.1 to 4.3 (show all)"], ans:"C" },
+    { q:"Why is it important to repeat experiments?", opts:["A. To increase the number of variables","B. To make the experiment last longer","C. To check results are reliable and reduce the effect of random errors","D. To change the hypothesis each time"], ans:"C" },
+    { q:"A student wants to find out if fertiliser type affects plant growth. Which variable should she measure?", opts:["A. The type of fertiliser (independent variable)","B. The height or mass of the plant (dependent variable)","C. The amount of water given (control variable)","D. The colour of the pot"], ans:"B" },
+    { q:"A student's data shows that as temperature increases from 0°C to 40°C, enzyme activity increases. From 40°C to 80°C, activity decreases. What is the best conclusion?", opts:["A. Enzymes always work best at high temperatures","B. The enzyme has an optimum temperature around 40°C","C. Temperature has no effect on enzymes","D. Enzymes stop working below 40°C"], ans:"B" },
+    { q:"Which type of graph is MOST appropriate for showing how temperature changes over time?", opts:["A. Pie chart","B. Bar chart","C. Line graph","D. Pictogram"], ans:"C" },
+    { q:"A student observes that areas with more trees tend to have cooler temperatures. This is:", opts:["A. A proven law of science","B. A correlation that suggests a possible relationship","C. Proof that trees cause cooling","D. An anomalous result"], ans:"B" },
+    { q:"An anomalous result in an experiment should be:", opts:["A. Reported as the final answer","B. Hidden so the experiment looks better","C. Investigated — repeated to check if it is an error or a genuine finding","D. Always ignored"], ans:"C" },
+    { q:"Which of the following is a quantitative observation?", opts:["A. The flower is red","B. The solution smells like vinegar","C. The temperature rose by 12°C","D. The crystal looks shiny"], ans:"C" },
+    { q:"Matter that has a fixed volume but no fixed shape is in which state?", opts:["A. Solid","B. Liquid","C. Gas","D. Plasma"], ans:"B" },
+    { q:"An element is:", opts:["A. A substance made of two or more different atoms joined together","B. A substance made of only one type of atom","C. Any pure liquid","D. A mixture of metals"], ans:"B" },
+    { q:"The atomic number of an element tells you:", opts:["A. The number of neutrons in the nucleus","B. The mass of the atom","C. The number of protons in the nucleus","D. The number of electrons in the outer shell only"], ans:"C" },
+    { q:"Which of the following shows a physical property of a substance?", opts:["A. Iron rusts in air","B. Magnesium burns in oxygen","C. Wood burns with a yellow flame","D. Water boils at 100°C at sea level"], ans:"D" },
+    { q:"A 100 g sample of a mixture of sand and salt is dissolved in water, then filtered, and the filtrate evaporated. The residue from evaporation has mass 35 g. What mass of sand was in the original mixture?", opts:["A. 35 g","B. 65 g","C. 100 g","D. 135 g"], ans:"B" },
+    { q:"Which of the following pairs are both elements (not compounds)?", opts:["A. Water and salt","B. Oxygen and gold","C. Carbon dioxide and iron","D. Glucose and copper"], ans:"B" },
+    { q:"When sodium hydroxide (alkaline) is added to hydrochloric acid (acidic) in equal concentrations, the resulting solution is:", opts:["A. Strongly acidic","B. Strongly alkaline","C. Neutral (salt + water)","D. More reactive than either alone"], ans:"C" },
+    { q:"Which of the following reactions produces hydrogen gas?", opts:["A. Iron + Oxygen → Iron oxide","B. Zinc + Hydrochloric acid → Zinc chloride + Hydrogen","C. Carbon + Oxygen → Carbon dioxide","D. Sodium hydroxide + Hydrochloric acid → Sodium chloride + Water"], ans:"B" },
+    { q:"Why does a burning candle lose mass over time?", opts:["A. Wax evaporates into thin air","B. The products of combustion (CO₂ and H₂O) are released as gases","C. The flame absorbs mass from the candle","D. The wick absorbs the wax"], ans:"B" },
+    { q:"A student heats copper carbonate and notices a colour change from green to black, and a gas that turns limewater milky. The gas is:", opts:["A. Oxygen","B. Hydrogen","C. Carbon dioxide","D. Nitrogen"], ans:"C" },
+    { q:"An object moves 60 m in 12 seconds at constant speed. What is its speed?", opts:["A. 720 m/s","B. 72 m/s","C. 5 m/s","D. 0.2 m/s"], ans:"C" },
+    { q:"Which of the following correctly describes deceleration?", opts:["A. Increasing speed in the forward direction","B. Moving at constant speed","C. Decreasing speed (negative acceleration)","D. Changing direction at constant speed"], ans:"C" },
+    { q:"A distance-time graph shows a horizontal straight line. This means the object is:", opts:["A. Accelerating","B. Moving at constant speed","C. Stationary","D. Decelerating"], ans:"C" },
+    { q:"Which wave property determines the loudness of a sound?", opts:["A. Frequency","B. Speed","C. Amplitude","D. Wavelength"], ans:"C" },
+    { q:"Which of the following is a transverse wave?", opts:["A. Sound wave in air","B. Light wave","C. Seismic P-wave","D. Compression wave in a spring"], ans:"B" },
+    { q:"Ultrasound is used in medical scanning because:", opts:["A. It travels faster than visible light","B. It can penetrate the body and reflect off internal organs to form images","C. It is visible to the human eye","D. It heats tissue to show blood flow"], ans:"B" },
+    { q:"A student drops a ball from 2 m height onto a hard floor. The ball bounces back to 1.6 m. The energy lost is:", opts:["A. 80% of original energy","B. 20% of original energy","C. 1.6 J","D. 2 J"], ans:"B" },
+    { q:"Newton's Third Law states that:", opts:["A. Force equals mass times acceleration","B. Every action has an equal and opposite reaction","C. An object in motion stays in motion unless acted on by a force","D. Heavier objects fall faster than lighter objects"], ans:"B" },
+    { q:"Which of the following is an example of Newton's Third Law?", opts:["A. A ball slowing down due to friction","B. A rocket propelling itself forward by expelling gas backwards","C. A falling apple accelerating due to gravity","D. A box staying still on a table"], ans:"B" },
+    { q:"Which of the following is measured in Hertz (Hz)?", opts:["A. Amplitude of a wave","B. Speed of a wave","C. Frequency of a wave","D. Wavelength of a wave"], ans:"C" },
+  ],
+  sectionB: [
+    { stem:"A student investigates whether the length of a wire affects its resistance. Which statements correctly describe good experimental practice?",
+      stmts:["Keep the type and thickness of wire the same throughout.","Repeat each measurement three times and take the average.","Change both the length and thickness of the wire in each trial."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about elements, compounds, and mixtures are correct?",
+      stmts:["A compound contains two or more elements chemically joined in a fixed ratio.","A mixture can be separated by physical methods.","Elements are made of more than one type of atom."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about speed and motion are correct?",
+      stmts:["Speed is calculated as distance divided by time.","A car travelling at constant speed has zero acceleration.","Velocity is the same as speed."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about waves are correct?",
+      stmts:["Frequency and wavelength are inversely proportional if wave speed is constant.","Amplitude determines the energy carried by a wave.","All waves require a medium to travel through."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"A student tests four types of soil to see which holds the most water. Which statements describe a fair test?",
+      stmts:["Use the same volume of soil in each test tube.","Pour the same volume of water through each soil sample.","Use different sized funnels for each soil type."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about Newton's laws of motion are correct?",
+      stmts:["Newton's First Law says an object at rest will remain at rest unless acted upon by a net force.","Newton's Second Law states that F = ma (force = mass × acceleration).","Newton's Third Law means that if you push a wall, the wall pushes back with a greater force."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"B" },
+    { stem:"Which statements about the pH scale are correct?",
+      stmts:["A substance with pH 7 is neutral.","A lower pH number indicates a stronger acid.","Universal indicator turns blue in neutral solutions."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","1, 3 only"],["D","2, 3 only"]], ans:"B" },
+    { stem:"Which statements about scientific variables are correct?",
+      stmts:["The independent variable is the one the experimenter deliberately changes.","The dependent variable is measured as the outcome of the experiment.","Control variables are changed every trial to see their effect."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about sound waves are correct?",
+      stmts:["Sound is a longitudinal wave that travels by compression and rarefaction of particles.","Sound travels faster in solids than in gases.","Sound can travel through a vacuum."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+    { stem:"Which statements about combustion reactions are correct?",
+      stmts:["Complete combustion of a hydrocarbon produces carbon dioxide and water.","Incomplete combustion can produce carbon monoxide, which is toxic.","All combustion reactions absorb energy from the surroundings."],
+      opts:[["A","1, 2, 3"],["B","1, 2 only"],["C","2, 3 only"],["D","1, 3 only"]], ans:"B" },
+  ]
+}
+
+]; // end PAPERS
+
+/* ══════════════════════════════════════
+   APP STATE
+══════════════════════════════════════ */
+let currentPaper = null;
+let userAnswers = {};
+let timerInterval = null;
+let timeLeft = 75 * 60;
+let scores = JSON.parse(localStorage.getItem('spso_scores') || '{}');
+
+/* ══════════════════════════════════════
+   HOME
+══════════════════════════════════════ */
+function renderHome() {
+  const done = Object.keys(scores).length;
+  const best = done ? Math.max(...Object.values(scores).map(s => s.score)) + '/50' : '—';
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-best').textContent = best;
+
+  const grid = document.getElementById('papers-grid');
+  grid.innerHTML = '';
+  PAPERS.forEach((p, i) => {
+    const sc = scores[i];
+    const isDone = !!sc;
+    const card = document.createElement('div');
+    card.className = 'paper-card' + (isDone ? ' done' : '');
+    card.innerHTML = `
+      <div class="paper-top">
+        <div class="paper-num">${p.title}</div>
+        <div class="paper-badge">${isDone ? '✓ Done' : '40 Qs · 75 min'}</div>
+      </div>
+      <div class="paper-info">40 questions &bull; Section A (30×1mk) + Section B (10×2mk) &bull; 75 minutes</div>
+      <div class="paper-topics">
+        ${p.topics.map((t,ti) => `<span class="topic-tag ${ti===0?'tag-bio':ti===1?'tag-chem':'tag-phys'}">${t}</span>`).join('')}
+      </div>
+      ${isDone ? `<div class="paper-score">Best score: ${sc.score}/50 (${Math.round(sc.score/50*100)}%)</div>` : ''}
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="startPaper(${i})">
+          ${isDone ? 'Retry Paper' : 'Start Paper'}
+        </button>
+        ${isDone ? `<button class="btn btn-outline btn-sm" onclick="viewResults(${i})">View Results</button>` : ''}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* ══════════════════════════════════════
+   EXAM
+══════════════════════════════════════ */
+function startPaper(idx) {
+  currentPaper = idx;
+  userAnswers = {};
+  timeLeft = 75 * 60;
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('exam').style.display = 'block';
+  document.getElementById('exam-title-bar').textContent = PAPERS[idx].title;
+  renderExam(idx);
+  startTimer();
+}
+
+function renderExam(idx) {
+  const paper = PAPERS[idx];
+  const body = document.getElementById('exam-body');
+  body.innerHTML = '';
+
+  // Section A
+  const secA = document.createElement('div');
+  secA.innerHTML = '<div class="section-header">Section A — 30 Questions (1 mark each)</div>' +
+    '<div class="section-instruction">For each question, choose the <strong>one best answer</strong> (A, B, C, or D).</div>';
+  paper.sectionA.forEach((q, i) => {
+    secA.appendChild(makeQuestionCard(i + 1, q, 'A', i));
+  });
+  body.appendChild(secA);
+
+  // Section B
+  const respTable = `<table class="resp-table"><tr><th>Response</th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+    <tr><td>Correct statements</td><td>1, 2, 3</td><td>1, 2 only</td><td>2, 3 only</td><td>1 only</td></tr></table>`;
+  const secB = document.createElement('div');
+  secB.innerHTML = '<div class="section-header">Section B — 10 Questions (2 marks each)</div>' +
+    '<div class="section-instruction">One or more of the three statements may be correct. Choose the response (A–D) that matches the correct statements.<br>' + respTable + '</div>';
+  paper.sectionB.forEach((q, i) => {
+    secB.appendChild(makeQuestionCardB(31 + i, q, i));
+  });
+  body.appendChild(secB);
+
+  updateAnsweredCount();
+}
+
+function makeQuestionCard(num, q, section, dataIdx) {
+  const card = document.createElement('div');
+  card.className = 'question-card';
+  card.id = `card-${num}`;
+  let optsHtml = q.opts.map(o => {
+    const letter = o.charAt(0);
+    return `<label class="option-label" id="lbl-${num}-${letter}">
+      <input type="radio" name="q${num}" value="${letter}" onchange="selectAnswer(${num}, '${letter}', '${section}', ${dataIdx})">
+      <span class="opt-letter">${letter}</span>
+      <span>${o.slice(3)}</span>
+    </label>`;
+  }).join('');
+  card.innerHTML = `<div class="q-stem"><span class="q-num">${num}.</span>${q.q}</div>
+    <div class="options">${optsHtml}</div>`;
+  return card;
+}
+
+function makeQuestionCardB(num, q, dataIdx) {
+  const card = document.createElement('div');
+  card.className = 'question-card';
+  card.id = `card-${num}`;
+  let stmtsHtml = q.stmts.map((s, i) => `<div class="stmt-row"><span class="stmt-num">${i+1}.</span><span>${s}</span></div>`).join('');
+  let optsHtml = q.opts.map(o => {
+    const letter = o[0];
+    return `<label class="option-label" id="lbl-${num}-${letter}">
+      <input type="radio" name="q${num}" value="${letter}" onchange="selectAnswer(${num}, '${letter}', 'B', ${dataIdx})">
+      <span class="opt-letter">${letter}</span>
+      <span><strong>${letter}</strong> — ${o[1]}</span>
+    </label>`;
+  }).join('');
+  card.innerHTML = `<div class="q-stem"><span class="q-num">${num}.</span>${q.stem}</div>
+    <div class="stmt-group">${stmtsHtml}</div>
+    <div class="options">${optsHtml}</div>`;
+  return card;
+}
+
+function selectAnswer(num, letter, section, dataIdx) {
+  userAnswers[num] = { answer: letter, section, dataIdx };
+  const card = document.getElementById(`card-${num}`);
+  if (card) card.classList.add('answered');
+  updateAnsweredCount();
+  updateProgress(num);
+}
+
+function updateAnsweredCount() {
+  document.getElementById('answered-count').textContent = Object.keys(userAnswers).length;
+}
+
+function updateProgress(num) {
+  document.getElementById('exam-progress-bar').textContent = `Q ${num} / 40`;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const h = Math.floor(timeLeft / 3600);
+    const m = Math.floor((timeLeft % 3600) / 60);
+    const s = timeLeft % 60;
+    const disp = h > 0
+      ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+      : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const el = document.getElementById('timer-display');
+    el.textContent = disp;
+    el.className = 'timer-box' + (timeLeft <= 300 ? ' urgent' : '');
+    if (timeLeft <= 0) { clearInterval(timerInterval); submitPaper(); }
+  }, 1000);
+}
+
+function confirmQuit() {
+  if (confirm('Are you sure you want to quit? Your answers will be lost.')) {
+    clearInterval(timerInterval);
+    goHome();
+  }
+}
+
+/* ══════════════════════════════════════
+   SUBMIT & SCORE
+══════════════════════════════════════ */
+function submitPaper() {
+  clearInterval(timerInterval);
+  const paper = PAPERS[currentPaper];
+  let score = 0, correct = 0, wrong = 0, skip = 0;
+  const details = [];
+
+  // Section A
+  paper.sectionA.forEach((q, i) => {
+    const qNum = i + 1;
+    const ua = userAnswers[qNum];
+    const userAns = ua ? ua.answer : null;
+    const isCorrect = userAns === q.ans;
+    if (!userAns) skip++;
+    else if (isCorrect) { correct++; score++; }
+    else wrong++;
+    details.push({ num: qNum, stem: q.q, correct: q.ans, user: userAns, isCorrect, section: 'A', opts: q.opts });
+  });
+
+  // Section B
+  paper.sectionB.forEach((q, i) => {
+    const qNum = 31 + i;
+    const ua = userAnswers[qNum];
+    const userAns = ua ? ua.answer : null;
+    const isCorrect = userAns === q.ans;
+    if (!userAns) skip++;
+    else if (isCorrect) { correct++; score += 2; }
+    else wrong++;
+    details.push({ num: qNum, stem: q.stem, correct: q.ans, user: userAns, isCorrect, section: 'B', opts: q.opts });
+  });
+
+  // Save best score
+  const prev = scores[currentPaper];
+  if (!prev || score > prev.score) {
+    scores[currentPaper] = { score, details };
+    localStorage.setItem('spso_scores', JSON.stringify(scores));
+  }
+
+  showResults(score, correct, wrong, skip, details);
+}
+
+/* ══════════════════════════════════════
+   RESULTS
+══════════════════════════════════════ */
+function showResults(score, correct, wrong, skip, details) {
+  document.getElementById('exam').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  document.getElementById('score-big').textContent = score;
+  document.getElementById('bk-correct').textContent = correct;
+  document.getElementById('bk-wrong').textContent = wrong;
+  document.getElementById('bk-skip').textContent = skip;
+
+  const pct = Math.round(score / 50 * 100);
+  let grade, msg, color;
+  if (pct >= 88) { grade = '🥇 Gold'; msg = 'Outstanding! IMSO team material!'; color = '#b8860b'; }
+  else if (pct >= 76) { grade = '🥈 Silver'; msg = 'Excellent work! Keep it up!'; color = '#708090'; }
+  else if (pct >= 64) { grade = '🥉 Bronze'; msg = 'Good job! Review the questions you missed.'; color = '#cd7f32'; }
+  else { grade = 'Certificate of Participation'; msg = 'Good effort! Practise more and you will improve!'; color = 'var(--blue)'; }
+
+  document.getElementById('results-grade').textContent = grade;
+  document.getElementById('results-grade').style.color = color;
+  document.getElementById('results-msg').textContent = msg;
+  document.getElementById('score-circle').style.borderColor = color;
+  document.getElementById('score-big').style.color = color;
+
+  const nextBtn = document.getElementById('next-paper-btn');
+  nextBtn.style.display = currentPaper < PAPERS.length - 1 ? 'inline-flex' : 'none';
+
+  // Review
+  const rv = document.getElementById('review-sections');
+  rv.innerHTML = '';
+  ['A', 'B'].forEach(sec => {
+    const secDetails = details.filter(d => d.section === sec);
+    const toggle = document.createElement('div');
+    toggle.className = 'section-toggle';
+    toggle.innerHTML = `▼ Section ${sec} Review (${secDetails.filter(d=>d.isCorrect).length}/${secDetails.length} correct)`;
+    const list = document.createElement('div');
+    list.className = 'review-list';
+    secDetails.forEach(d => {
+      const cls = !d.user ? 'skipped' : d.isCorrect ? 'correct' : 'wrong';
+      const statusText = !d.user
+        ? '<span class="skip-text">Not answered</span>'
+        : d.isCorrect
+          ? `<span class="correct-text">✓ Correct — ${d.correct}</span>`
+          : `<span class="wrong-text">✗ Your answer: ${d.user} &nbsp;|&nbsp; Correct: ${d.correct}</span>`;
+      const item = document.createElement('div');
+      item.className = `review-item ${cls}`;
+      item.innerHTML = `<div class="review-q"><strong>Q${d.num}.</strong> ${d.stem}</div>
+        <div class="review-ans">${statusText}</div>`;
+      list.appendChild(item);
+    });
+    let open = false;
+    toggle.onclick = () => {
+      open = !open;
+      list.style.display = open ? 'flex' : 'none';
+      toggle.innerHTML = `${open?'▲':'▼'} Section ${sec} Review (${secDetails.filter(d=>d.isCorrect).length}/${secDetails.length} correct)`;
+    };
+    list.style.display = 'none';
+    rv.appendChild(toggle);
+    rv.appendChild(list);
+  });
+}
+
+function viewResults(idx) {
+  const sc = scores[idx];
+  if (!sc) return;
+  currentPaper = idx;
+  const paper = PAPERS[idx];
+  let correct = 0, wrong = 0, skip = 0;
+  sc.details.forEach(d => {
+    if (!d.user) skip++;
+    else if (d.isCorrect) correct++;
+    else wrong++;
+  });
+  showResults(sc.score, correct, wrong, skip, sc.details);
+}
+
+function nextPaper() {
+  if (currentPaper < PAPERS.length - 1) startPaper(currentPaper + 1);
+}
+
+function goHome() {
+  document.getElementById('exam').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('home').style.display = 'block';
+  clearInterval(timerInterval);
+  renderHome();
+  window.scrollTo(0, 0);
+}
+
+/* init */
+renderHome();
+</script>
+</body>
+</html>
